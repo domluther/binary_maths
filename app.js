@@ -209,7 +209,10 @@ function fillOutput(inputValue, bitLength, step, verbose) {
     } else if (inputBase === '2' && outputBase === '10') {
         let currentNumber = getCurrentNumber();
         let currentBit = inputValue.charAt(step - 1);
-
+        if (currentNumber === '')
+        {
+            currentNumber = 0;
+        }
         let change = currentBit * columnHeading;
         let originalValue = currentNumber;
         currentNumber += change;
@@ -224,6 +227,10 @@ function fillOutput(inputValue, bitLength, step, verbose) {
         let currentNumber = getCurrentNumber();
         let currentBit = inputValue.charAt(step - 1);
         outputBox.innerHTML = currentBit;
+        if (currentNumber === '')
+        {
+            currentNumber = 0;
+        }
         let change = currentBit * columnHeading;
         let originalValue = currentNumber;
         currentNumber += change;
