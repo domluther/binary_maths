@@ -1,10 +1,19 @@
 @charset "utf-8";
 /* CSS Document */
 
+
+
 body
 {
-    font-family: "Century Gothic", CenturyGothic, Geneva, AppleGothic, sans-serif;
+    font-family: "Question", "Century Gothic", CenturyGothic, Geneva, AppleGothic, sans-serif;
 }
+
+@font-face {
+    font-family: "Question";
+    src: local('Verdana');
+    unicode-range: U+003F;
+}
+
 #verboseArea{
     text-align: left;
     border-radius:5px;

@@ -110,12 +110,17 @@ function blankAreas() {
 
 function convert() {
     let inputBase = getInputBase();
+    let outputBase = getOutputBase();
     // Will need to iterate through when there is more than 1 input box, currently hardcode just one.
     setInputValue();
     let currentNumber;
     let inputValue = getInputValue();
     let bitLength = getBitLength();
     if (inputBase === "10") {
+        if (outputBase === "16")
+        {
+            bitLength = bitLength / 4;
+        }
         setCurrentNumber(inputValue, false);
         for (let i = 1; i <= bitLength; i++) {
             currentNumber = getCurrentNumber();
@@ -151,7 +156,14 @@ function stepThrough() {
     let currentStep;
     let nibble;
     let inputBase = getInputBase();
-    let bitLength = getBitLength()
+    let outputBase = getOutputBase();
+    let bitLength = getBitLength();
+
+    if (inputBase === "10" && outputBase === "16")
+    {
+        bitLength /= 4;
+    }
+
 
     // If first step
     if (getCurrentStep() === '') {
@@ -223,7 +235,7 @@ function fillOutput(inputValue, bitLength, step, verbose) {
             setCurrentNumber(currentNumber, true);
             verboseArea.innerHTML += `<li class="alignLeft"><strong>${originalValue}</strong> + <strong>${currentBit}</strong> * <strong>${columnHeading}</strong>? <strong>${currentNumber}</strong>.</li>`
         }
-    } else if (inputBase === '2' && outputBase === '16') {
+    } else if (inputBase === "2" && outputBase === '16') {
         let currentNumber = getCurrentNumber();
         let currentBit = inputValue.charAt(step - 1);
         outputBox.innerHTML = currentBit;
@@ -260,6 +272,18 @@ function fillOutput(inputValue, bitLength, step, verbose) {
             verboseArea.innerHTML += `<li class="alignLeft">How many <strong>${columnHeading}</strong>s in <strong>${inputValue}</strong>? <strong>${outputBit}</strong> remainder <strong>${inputValueInDenary % columnHeading}</strong>.</li>`
         }
     }
+    else if (inputBase === "10" && outputBase === "16")
+    {
+        let outputBit = Math.floor(inputValue / columnHeading).toString(16).toUpperCase();
+        outputBox.innerHTML = outputBit;
+        setCurrentNumber(inputValue % columnHeading, false);
+        setFinalAnswer(outputBit, step, bitLength);
+        if (verbose) {
+            setCurrentNumber(inputValue % columnHeading, true);
+            verboseArea.innerHTML += `<li class="alignLeft">How many <strong>${columnHeading}</strong>s in <strong>${inputValue}</strong>? <strong>${outputBit}</strong> remainder <strong>${inputValue % columnHeading}</strong>.</li>`
+        }
+
+    }
 }
 
 function drawBinaryBoxes(area) {
@@ -268,29 +292,44 @@ function drawBinaryBoxes(area) {
     createResultsArea();
     const outputArea = document.getElementById(area);
     outputArea.innerHTML = "";
+    let boxesPerNibble = 3;
+    let headingBase;
     let outputBase = getOutputBase();
     let inputBase = getInputBase();
     let bitLength = getBitLength()
     let nibbles = bitLength / 4;
+
+    if (inputBase === "10" && outputBase === "16")
+    {
+        nibbles = 1; // Inelegant way to force 1 hex nibble given 16 bit cap.
+        boxesPerNibble = (bitLength / 4) - 1; // -1 because zero indexed.
+    }
     // Draw heading boxes
-    // Add padding every 4 boxes for a nibble?
     for (let n = nibbles - 1; n >= 0; n--) {
         let padding = document.createElement("div");
         padding.setAttribute("class", "nibbleHeadingPadding");
         padding.setAttribute("id", "nibbleHeadingPadding" + n);
         outputArea.appendChild(padding);
-        for (let i = 3; i >= 0; i--) {
+        for (let i = boxesPerNibble; i >= 0; i--) {
             let headingPower;
             let trueIndex = n * 4 + i;
             let newChild = document.createElement("div");
             newChild.setAttribute("class", "headingBox");
             newChild.setAttribute("id", "headingBox" + trueIndex);
-            if (outputBase === '16' || inputBase === '16') {
+            if ((inputBase === "2" && outputBase === "16") || (inputBase === "16" && outputBase ==="2")) {
                 headingPower = trueIndex % 4;
-            } else {
-                headingPower = trueIndex;
+                headingBase = 2;
             }
-            newChild.innerHTML = Math.pow(2, headingPower);
+            else if (inputBase === "10" && outputBase === "16")
+                {
+                    headingPower = trueIndex % 4;
+                    headingBase = 16;
+                }
+            else {
+                headingPower = trueIndex;
+                headingBase = 2;
+            }
+            newChild.innerHTML = Math.pow(headingBase, headingPower);
             document.getElementById('nibbleHeadingPadding' + n).appendChild(newChild);
         }
     }
@@ -303,7 +342,7 @@ function drawBinaryBoxes(area) {
         padding.setAttribute("class", "nibbleOutputPadding");
         padding.setAttribute("id", "nibbleOutputPadding" + n);
         outputArea.appendChild(padding);
-        for (let i = 3; i >= 0; i--) {
+        for (let i = boxesPerNibble; i >= 0; i--) {
             let trueIndex = n * 4 + i;
             let newChild = document.createElement("div");
             newChild.setAttribute("class", "outputBox");
@@ -369,6 +408,21 @@ function hexToBinary() {
     blankAreas();
     createInputs(inputs, inputBase);
     createSettings(bitLengthOptions);
+}
+
+function denaryToHex() {
+    // Offer a method 2 - that shows denary -> binary -> hex (can show the hex part just in verbose/final option
+    let inputBase = 10;
+    let outputBase = 16;
+    let inputs = 1;
+    const bitLengthOptions = ["4", "8", "16"];
+
+    document.getElementById("titleFrom").innerHTML = inputBase;
+    document.getElementById("titleTo").innerHTML = outputBase;
+    blankAreas();
+    createInputs(inputs, inputBase);
+    createSettings(bitLengthOptions);
+    createResultsArea();
 }
 
 function setCurrentNumber(value, show = true) {
