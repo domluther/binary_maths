@@ -78,7 +78,7 @@ function createSettings(bitLengthOptions) {
   drawButton.setAttribute("id", "drawButton");
   drawButton.setAttribute("value", "Draw");
   drawButton.addEventListener("click", function () {
-    drawBinaryBoxes("outputArea");
+    draw("outputArea");
   });
   settingsArea.appendChild(drawButton);
 
@@ -90,8 +90,8 @@ function createSettings(bitLengthOptions) {
   calculateButton.addEventListener("click", function () {
     calculate();
   });
-  calculateButton.style.visibility = "hidden";
   settingsArea.appendChild(calculateButton);
+  hideElement("calculateButton");
 
   let stepButton = document.createElement("input");
   stepButton.setAttribute("type", "button");
@@ -100,8 +100,8 @@ function createSettings(bitLengthOptions) {
   stepButton.addEventListener("click", function () {
     stepThrough();
   });
-  stepButton.style.visibility = "hidden";
   settingsArea.appendChild(stepButton);
+  hideElement("stepButton");
 }
 
 /**
@@ -125,9 +125,9 @@ function createResultsArea() {
     let ele = document.createElement("p");
     ele.setAttribute("id", element + "Holder");
     ele.innerHTML = `${elementsToAdd[element]}: <strong id = ${element}></strong>`;
-    ele.style.display = "none";
+    ele.style.visibility = "hidden";
     resultsArea.appendChild(ele);
-    resultsArea.appendChild(document.createElement("br"));
+    //resultsArea.appendChild(document.createElement("br"));
   }
 
   document.getElementById("verboseArea").innerHTML = "";
@@ -159,8 +159,6 @@ function blankAreas() {
  */
 function calculate() {
   let toPassIn;
-  let currentValue;
-  let remainder;
   setInputValue(); // Read in the value to calculate
   let inputValue = getInputValue();
   let inputBase = getInputBase();
@@ -274,7 +272,7 @@ function stepThrough() {
 }
 
 /**
- * Called for each step of the conversion. Performs the calcuation and outputs it.
+ * Called for each step of the conversion. Performs the calculation and outputs it.
  * @param inputValue - for binary the input value, for denary the remainder, for hex the current character/value
  * @param bitLength - how many bits are going to be used to represent tha value
  * @param currentStep
@@ -383,7 +381,7 @@ function fillOutput(inputValue, bitLength, currentStep, verbose = false) {
  * Called when draw is pressed
  * @param areaId - element Id of the area to draw the boxes in
  */
-function drawBinaryBoxes(areaId) {
+function draw(areaId) {
   // Visualise the output
   // Start by re-creating the area to blank it
   createResultsArea();
@@ -443,6 +441,83 @@ function drawBinaryBoxes(areaId) {
   // Draw output boxes
   // Add padding every 4 boxes for a nibble?
   for (let n = nibbles - 1; n >= 0; n--) {
+    let padding = document.createElement("div");
+    padding.setAttribute("class", "nibbleOutputPadding");
+    padding.setAttribute("id", "nibbleOutputPadding" + n);
+    outputArea.appendChild(padding);
+    for (let i = boxesPerNibble; i >= 0; i--) {
+      let trueIndex = n * 4 + i;
+      let newChild = document.createElement("div");
+      newChild.setAttribute("class", "outputBox");
+      newChild.setAttribute("id", "binaryOutputBox" + trueIndex);
+      document.getElementById("nibbleOutputPadding" + n).appendChild(newChild);
+    }
+  }
+  showElement("calculateButton");
+  showElement("stepButton");
+  outputArea.appendChild(document.createElement("br"));
+}
+/**
+function drawAddition(areaId) {
+  // Visualise the output
+  // Start by re-creating the area to blank it
+  createResultsArea();
+  const outputArea = document.getElementById(areaId);
+  outputArea.innerHTML = "";
+  let boxesPerNibble = 3;
+  let headingBase;
+  let outputBase = getOutputBase();
+  let inputBase = getInputBase();
+  let bitLength = getBitLength();
+  let nibbles = bitLength / 4;
+
+  if (
+      (inputBase === "10" && outputBase === "16") ||
+      (inputBase === "16" && outputBase === "10")
+  ) {
+    nibbles = 1; // Inelegant way to force 1 hex nibble given 16 bit cap.
+    boxesPerNibble = bitLength / 4 - 1; // -1 because zero indexed.
+  }
+  // Draw heading boxes. Outer loop used to create padding every nibble
+  for (let n = nibbles - 1; n >= 0; n--) {
+    let padding = document.createElement("div");
+    padding.setAttribute("class", "nibbleHeadingPadding");
+    padding.setAttribute("id", "nibbleHeadingPadding" + n);
+    outputArea.appendChild(padding);
+    for (let i = boxesPerNibble; i >= 0; i--) {
+      let headingPower;
+      let trueIndex = n * 4 + i;
+      let newChild = document.createElement("div");
+      newChild.setAttribute("class", "headingBox");
+      newChild.setAttribute("id", "headingBox" + trueIndex);
+      if (
+          (inputBase === "2" && outputBase === "16") ||
+          (inputBase === "16" && outputBase === "2")
+      ) {
+        // Binary <-> Hex
+        headingPower = trueIndex % 4;
+        headingBase = 2;
+      } else if (
+          (inputBase === "10" && outputBase === "16") ||
+          (inputBase === "16" && outputBase === "10")
+      ) {
+        // Hex <-> Denary
+        headingPower = trueIndex % 4;
+        headingBase = 16;
+      } else {
+        // Binary <-> Denary
+        headingPower = trueIndex;
+        headingBase = 2;
+      }
+      newChild.innerHTML = Math.pow(headingBase, headingPower);
+      document.getElementById("nibbleHeadingPadding" + n).appendChild(newChild);
+    }
+  }
+  outputArea.appendChild(document.createElement("br"));
+
+  // Draw output boxes
+  // Add padding every 4 boxes for a nibble?
+  for (let n = nibbles - 1; n >= 0; n--) {
     padding = document.createElement("div");
     padding.setAttribute("class", "nibbleOutputPadding");
     padding.setAttribute("id", "nibbleOutputPadding" + n);
@@ -455,20 +530,26 @@ function drawBinaryBoxes(areaId) {
       document.getElementById("nibbleOutputPadding" + n).appendChild(newChild);
     }
   }
-  document.getElementById("calculateButton").style.visibility = "visible";
-  document.getElementById("stepButton").style.visibility = "visible";
-
+  showElement("calculateButton");
+  showElement("stepButton");
   outputArea.appendChild(document.createElement("br"));
 }
+**/
 
-function setup(inputBase, outputBase, inputs = 1) {
+/**
+ * Used to create each of the base conversion pages
+ * @param inputBase
+ * @param outputBase
+ * @param numberOfInputs
+ */
+function setup(inputBase, outputBase, numberOfInputs = 1) {
   // Generic setup for all simple conversions
   const bitLengthOptions = ["4", "8", "16"];
 
   document.getElementById("titleFrom").innerHTML = inputBase;
   document.getElementById("titleTo").innerHTML = outputBase;
   blankAreas();
-  createInputs(inputs);
+  createInputs(numberOfInputs);
   createSettings(bitLengthOptions);
 }
 
@@ -498,89 +579,8 @@ function hexToDenary() {
   setup(16, 10);
 }
 
-function setCurrentValue(value, show = true) {
-  let ele = document.getElementById("currentValue");
-  if (show) {
-    document.getElementById("currentValueHolder").style.display = "inline";
-  }
-  ele.innerHTML = value;
-}
-
-function setRemainder(value, show = true) {
-  let ele = document.getElementById("remainder");
-  if (show) {
-    document.getElementById("remainderHolder").style.display = "inline";
-  }
-  ele.innerHTML = value;
-}
-
-function getRemainder() {
-  let ele = document.getElementById("remainder");
-  let remainder = ele.innerHTML;
-  let inputBase = getInputBase();
-  let outputBase = getOutputBase();
-  if (remainder === "") {
-    return "";
-  } else {
-    return parseInt(remainder);
-  }
-}
-
-function getCurrentValue() {
-  let ele = document.getElementById("currentValue");
-  let currentValue = ele.innerHTML;
-  let inputBase = getInputBase();
-  let outputBase = getOutputBase();
-  if (currentValue === "") {
-    return "";
-  } else {
-    if (inputBase === "16" && outputBase === "2") {
-      return currentValue;
-    } else {
-      return parseInt(currentValue);
-    }
-  }
-}
-
-function setFinalAnswer(value, step, bitLength, set = false) {
-  // TODO: Adjust so 0x 0b are not bolded, would need to be moved to end of outputValueHolder
-  let ele = document.getElementById("outputValue");
-  let base = getOutputBase();
-
-  if (step < bitLength) {
-    ele.innerHTML += value;
-  } else if (step === bitLength) {
-    document.getElementById("outputValueHolder").style.display = "inline";
-    ele.innerHTML += value;
-    if (base === "2") {
-      let parts = ele.innerHTML.match(/.{1,4}/g);
-      ele.innerHTML = "0b" + parts.join(" ");
-    } else if (base === "16") {
-      ele.innerHTML = "</strong>0x<strong>" + ele.innerHTML + "<sub>16</sub>";
-    }
-  }
-  if (set) {
-    ele.innerHTML = value;
-  }
-}
-
-function setCurrentStep(newStepValue) {
-  let ele = document.getElementById("currentStep");
-  if (newStepValue === "") {
-    document.getElementById("currentStepHolder").style.display = "none";
-  } else {
-    document.getElementById("currentStepHolder").style.display = "inline";
-  }
-  ele.innerHTML = newStepValue;
-}
-
-function getCurrentStep() {
-  let currentStep = document.getElementById("currentStep").innerHTML;
-  if (currentStep === "") {
-    return 0;
-  } else {
-    return parseInt(currentStep);
-  }
+function binaryAddition() {
+  setup(2, 2, 2);
 }
 
 /**
@@ -601,9 +601,42 @@ function getOutputBase() {
   return ele.innerHTML.replace(/[^0-9]/g, "");
 }
 
+function getBitLength() {
+  let bitIndex = document.getElementById("bitLength").selectedIndex;
+  return parseInt(document.getElementById("bitLength").options[bitIndex].value);
+}
+
+/**
+ * Used to set the final answer both as an intermediate step to keep track while invisible and a final value.
+ * @param value
+ * @param currentStep
+ * @param bitLength
+ * @param set
+ */
+function setFinalAnswer(value, currentStep, bitLength, set = false) {
+  // TODO: Adjust so subscript base is not bolded
+  let ele = document.getElementById("outputValue");
+  let base = getOutputBase();
+
+  if (currentStep < bitLength) {
+    ele.innerHTML += value;
+  } else if (currentStep === bitLength) {
+    showElement("outputValueHolder");
+    ele.innerHTML += value;
+    if (base === "2") {
+      // Used to split the binary into nibbles
+      ele.innerHTML = ele.innerHTML.match(/.{1,4}/g).join(" ") + "<sub>2</sub>";
+    } else if (base === "16") {
+      ele.innerHTML = ele.innerHTML + "<sub>16</sub>";
+    }
+  }
+  if (set) {
+    ele.innerHTML = value;
+  }
+}
+
 function getInputValue() {
-  let inputValue = document.getElementById("inputValue").innerHTML;
-  return inputValue;
+  return document.getElementById("inputValue").innerHTML;
 }
 
 /**
@@ -611,29 +644,98 @@ function getInputValue() {
  * Pads binary/hex values to appropriate length
  */
 function setInputValue() {
+  // TODO: Adjust so subscript base is not bolded
   let inputBase = getInputBase();
   let bitLength = getBitLength();
   let inputValue = document.getElementById("inputBox0").value;
   inputValue = inputValue.split(" ").join("");
   if (inputBase === "2") {
+    // Pads it to the appropriate length and splits it into nibbles.
     inputValue = inputValue.padStart(bitLength, "0");
+    inputValue = inputValue.match(/.{1,4}/g).join(" ");
   } else if (inputBase === "16") {
     bitLength /= 4;
     inputValue = inputValue.padStart(bitLength, "0");
   }
   let ele = document.getElementById("inputValue");
-  document.getElementById("inputValueHolder").style.display = "inline";
-  ele.innerHTML = inputValue;
+  showElement("inputValueHolder");
+  ele.innerHTML = inputValue + `<sub>${inputBase}</sub>`;
 }
 
-function getBitLength() {
-  let bitIndex = document.getElementById("bitLength").selectedIndex;
-  let bitLength = parseInt(
-    document.getElementById("bitLength").options[bitIndex].value
-  );
-  return bitLength;
+function getCurrentStep() {
+  let currentStep = document.getElementById("currentStep").innerHTML;
+  if (currentStep === "") {
+    return 0;
+  } else {
+    return parseInt(currentStep);
+  }
+}
+
+function setCurrentStep(newStepValue) {
+  let ele = document.getElementById("currentStep");
+  if (newStepValue === "") {
+    hideElement("currentStepHolder");
+  } else {
+    showElement("currentStepHolder");
+  }
+  ele.innerHTML = newStepValue;
+}
+
+function getCurrentValue() {
+  let ele = document.getElementById("currentValue");
+  let currentValue = ele.innerHTML;
+  let inputBase = getInputBase();
+  let outputBase = getOutputBase();
+  if (currentValue === "") {
+    return currentValue;
+  } else {
+    if (inputBase === "16" && outputBase === "2") {
+      return currentValue;
+    } else {
+      return parseInt(currentValue);
+    }
+  }
+}
+
+/**
+ * Used in the results section
+ * @param value
+ * @param show - do you want the current value to be displayed in the results?
+ */
+function setCurrentValue(value, show = true) {
+  let ele = document.getElementById("currentValue");
+  if (show) {
+    showElement("currentValueHolder");
+  } else {
+    hideElement("currentValueHolder");
+  }
+  ele.innerHTML = value;
+}
+
+function getRemainder() {
+  let ele = document.getElementById("remainder");
+  let remainder = ele.innerHTML;
+  if (remainder === "") {
+    return remainder;
+  } else {
+    return parseInt(remainder);
+  }
+}
+
+function setRemainder(value, show = true) {
+  let ele = document.getElementById("remainder");
+  if (show) {
+    showElement("remainderHolder");
+  } else {
+    hideElement("remainderHolder");
+  }
+  ele.innerHTML = value;
 }
 
 function hideElement(elementId) {
   document.getElementById(elementId).style.visibility = "hidden";
+}
+
+function showElement(elementId) {
+  document.getElementById(elementId).style.visibility = "visible";
 }
