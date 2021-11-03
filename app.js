@@ -82,16 +82,16 @@ function createSettings(bitLengthOptions) {
   });
   settingsArea.appendChild(drawButton);
 
-  // Create a convert button
-  let convertButton = document.createElement("input");
-  convertButton.setAttribute("type", "button");
-  convertButton.setAttribute("id", "convertButton");
-  convertButton.setAttribute("value", "Convert");
-  convertButton.addEventListener("click", function () {
-    convert();
+  // Create a calculate button
+  let calculateButton = document.createElement("input");
+  calculateButton.setAttribute("type", "button");
+  calculateButton.setAttribute("id", "calculateButton");
+  calculateButton.setAttribute("value", "Calculate");
+  calculateButton.addEventListener("click", function () {
+    calculate();
   });
-  convertButton.style.visibility = "hidden";
-  settingsArea.appendChild(convertButton);
+  calculateButton.style.visibility = "hidden";
+  settingsArea.appendChild(calculateButton);
 
   let stepButton = document.createElement("input");
   stepButton.setAttribute("type", "button");
@@ -150,76 +150,26 @@ function blankAreas() {
 }
 
 /**
- * Run when the convert button is pressed. Different options depending on the bases used.
+ * Run when the calculate button is pressed. Different options depending on the bases used.
+ * From binary - uses inputValue and step to index
  * From denary - keep track of remainder
+ * From hex - keep track of nibble, and pass in the current value of that nibble.
  * Outputting in hex - bitLength adjusted due to nibbles
+ *
  */
-function convert() {
+function calculate() {
+  let toPassIn;
   let currentValue;
   let remainder;
-  setInputValue(); // Read in the value to convert
+  setInputValue(); // Read in the value to calculate
   let inputValue = getInputValue();
   let inputBase = getInputBase();
   let outputBase = getOutputBase();
   let bitLength = getBitLength();
 
-  // Will need to iterate through when there is more than 1 input box, currently hardcode just one.
+  // TODO Will need to iterate through when there is more than 1 input box, currently hardcode just one.
 
-  if (inputBase === "2") {
-    // Pass in the whole input as it is then indexed
-    for (let step = 1; step <= bitLength; step++) {
-      fillOutput(inputValue, bitLength, step, false);
-    }
-  } else if (inputBase === "10") {
-    if (outputBase === "16") {
-      // To deal with hex nibbles
-      bitLength = bitLength / 4;
-    }
-    setRemainder(inputValue, false);
-    // Iterate through each bit to output. Pass in the remainder
-    for (let step = 1; step <= bitLength; step++) {
-      remainder = getRemainder();
-      fillOutput(remainder, bitLength, step, false);
-    }
-  } else if (inputBase === "16") {
-    if (outputBase === "10") {
-      // Used to index the parts of the number as each represents a nibble
-      bitLength = bitLength / 4;
-      for (let i = 1; i <= bitLength; i++) {
-        let toPassIn = inputValue.charAt(i - 1);
-        fillOutput(toPassIn, bitLength, i, false);
-        // Use an index to move along. Increment every 4 bits (nibble)
-      }
-    } else {
-      let index = 0;
-      for (let i = 1; i <= bitLength; i++) {
-        // Only read in the first bit of each nibble
-        if (i % 4 === 1) {
-          currentValue = inputValue.charAt(index);
-          setCurrentValue(currentValue);
-        }
-        currentValue = getCurrentValue();
-        fillOutput(currentValue, bitLength, i, false);
-        // Use an index to move along. Increment every 4 bits (nibble)
-        if (i % 4 === 0) {
-          index += 1;
-        }
-      }
-    }
-  }
-
-  // Hide the step button after converting - reduces error
-  document.getElementById("stepButton").style.visibility = "hidden";
-}
-
-function stepThrough() {
-  let toPassIn;
-  let currentStep = getCurrentStep();
-  let nibble;
-  let inputBase = getInputBase();
-  let outputBase = getOutputBase();
-  let bitLength = getBitLength();
-
+  // To deal with hex nibbles
   if (
     (inputBase === "10" && outputBase === "16") ||
     (inputBase === "16" && outputBase === "10")
@@ -227,7 +177,61 @@ function stepThrough() {
     bitLength /= 4;
   }
 
-  // If first step
+  if (inputBase === "2") {
+    toPassIn = inputValue;
+    // Pass in the whole input as it is then indexed
+    for (let currentStep = 1; currentStep <= bitLength; currentStep++) {
+      fillOutput(toPassIn, bitLength, currentStep);
+    }
+  } else if (inputBase === "10") {
+    setRemainder(inputValue, false);
+    // Iterate through each bit to output. Pass in the remainder
+    for (let currentStep = 1; currentStep <= bitLength; currentStep++) {
+      toPassIn = getRemainder();
+      fillOutput(toPassIn, bitLength, currentStep);
+    }
+  } else if (inputBase === "16") {
+    if (outputBase === "2") {
+      for (let currentStep = 1; currentStep <= bitLength; currentStep++) {
+        // Only read in the first bit of each nibble
+        if (currentStep % 4 === 1) {
+          let nibble = Math.floor(currentStep / 4);
+          setCurrentValue(inputValue.charAt(nibble));
+        }
+        toPassIn = getCurrentValue();
+        fillOutput(toPassIn, bitLength, currentStep);
+      }
+    } else if (outputBase === "10") {
+      for (let currentStep = 1; currentStep <= bitLength; currentStep++) {
+        let toPassIn = inputValue.charAt(currentStep - 1);
+        fillOutput(toPassIn, bitLength, currentStep);
+      }
+    }
+  }
+  // Hide the step button after calculating - reduces error
+  hideElement("stepButton");
+}
+
+/**
+ * Used for the verbose output option - runs each time the step button is pressed
+ */
+function stepThrough() {
+  let toPassIn;
+  let nibble;
+  let currentStep = getCurrentStep();
+  let inputBase = getInputBase();
+  let outputBase = getOutputBase();
+  let bitLength = getBitLength();
+
+  // To deal with hex nibbles
+  if (
+    (inputBase === "10" && outputBase === "16") ||
+    (inputBase === "16" && outputBase === "10")
+  ) {
+    bitLength /= 4;
+  }
+
+  // If first step, pass in the whole value. Or with hex the first character.
   if (currentStep === 0) {
     currentStep = 1;
     setCurrentStep(currentStep);
@@ -238,44 +242,62 @@ function stepThrough() {
       toPassIn = getInputValue();
     }
     fillOutput(toPassIn, bitLength, currentStep, true);
-  } else if (getCurrentStep() < bitLength) {
-    setCurrentStep(getCurrentStep() + 1);
+  } else if (currentStep < bitLength) {
+    // Increment the step
+    currentStep = getCurrentStep() + 1;
+    setCurrentStep(currentStep);
+    if (currentStep === bitLength) {
+      // No more steps to do
+      hideElement("stepButton");
+    }
 
-    if (inputBase === "10") {
+    if (inputBase === "2") {
+      toPassIn = getInputValue();
+    } else if (inputBase === "10") {
       toPassIn = getRemainder();
     } else if (inputBase === "16") {
-      if (getCurrentStep() % 4 === 1) {
-        nibble = Math.floor(getCurrentStep() / 4);
+      // Check the input value every nibble
+      if (currentStep % 4 === 1) {
+        nibble = Math.floor(currentStep / 4);
         toPassIn = getInputValue().charAt(nibble);
       } else if (inputBase === "16" && outputBase === "10") {
-        toPassIn = getInputValue().charAt(getCurrentStep() - 1);
+        toPassIn = getInputValue().charAt(currentStep - 1);
       } else {
         toPassIn = getCurrentValue();
       }
     } else {
-      toPassIn = getInputValue();
-    }
-    fillOutput(toPassIn, bitLength, getCurrentStep(), true);
+    } //pass - no other bases
+    fillOutput(toPassIn, bitLength, currentStep, true);
+  } else {
+    // Pass - No more steps.
   }
 }
 
-function fillOutput(inputValue, bitLength, step, verbose) {
-  // Iterate through the value and convert it
+/**
+ * Called for each step of the conversion. Performs the calcuation and outputs it.
+ * @param inputValue - for binary the input value, for denary the remainder, for hex the current character/value
+ * @param bitLength - how many bits are going to be used to represent tha value
+ * @param currentStep
+ * @param verbose - boolean used when stepping through values so it prints out details
+ */
+function fillOutput(inputValue, bitLength, currentStep, verbose = false) {
+  // Iterate through the value and calculate it
+  let remainder;
   let inputBase = getInputBase();
   let outputBase = getOutputBase();
-  let i = bitLength - step;
+  let boxIndex = bitLength - currentStep;
   let verboseArea = document.getElementById("verboseArea");
-  let outputBox = document.getElementById("binaryOutputBox" + i);
+  let outputBox = document.getElementById("binaryOutputBox" + boxIndex);
 
   // Highlight the active box & un-highlight the inactive one (doesn't happen on first step)
   outputBox.className = "outputBox active";
-  if (step !== 1) {
-    let j = i + 1;
+  if (currentStep !== 1) {
+    let j = boxIndex + 1;
     let oldOutputBox = document.getElementById("binaryOutputBox" + j);
     oldOutputBox.className = "outputBox";
   }
   let columnHeading = parseInt(
-    document.getElementById("headingBox" + i).innerHTML
+    document.getElementById("headingBox" + boxIndex).innerHTML
   );
 
   if (inputBase === "2") {
@@ -286,7 +308,7 @@ function fillOutput(inputValue, bitLength, step, verbose) {
     let originalValue = currentValue;
     // TODO: Could pass in the bit of interest instead of working it out here? Problem of variable name being less clear
     // Calculate how much that bit is worth and increments the current value
-    let currentBit = inputValue.charAt(step - 1);
+    let currentBit = inputValue.charAt(currentStep - 1);
     outputBox.innerHTML = currentBit;
     let change = currentBit * columnHeading;
     currentValue += change;
@@ -298,18 +320,17 @@ function fillOutput(inputValue, bitLength, step, verbose) {
 
     if (outputBase === "16") {
       // Every 4 bits (nibble) set the current hex value and explain it
-      if (step % 4 === 0) {
-        // add to final number (sometimes)
-        // reset current number (always)
+      if (currentStep % 4 === 0) {
+        // At the end of each nibble, convert the current value to hex, set the final answer and then reset the current value.
         let currentValueInHex = currentValue.toString(16).toUpperCase();
         if (verbose) {
           verboseArea.innerHTML += `<li class="alignLeft">End of nibble. Convert <strong>${currentValue}</strong> to hex. 0x<strong>${currentValueInHex}</strong>.</li>`;
         }
-        setFinalAnswer(currentValueInHex, step, bitLength);
+        setFinalAnswer(currentValueInHex, currentStep, bitLength);
         setCurrentValue(0);
       }
     } else if (outputBase === "10") {
-      setFinalAnswer(currentValue, step, bitLength, true);
+      setFinalAnswer(currentValue, currentStep, bitLength, true);
     }
   } else if (inputBase === "10") {
     // for denary - calculate the outputBit, output it and set the remainder
@@ -322,36 +343,35 @@ function fillOutput(inputValue, bitLength, step, verbose) {
         .toUpperCase();
     }
     outputBox.innerHTML = outputBit;
-    setRemainder(inputValue % columnHeading, false);
-    setFinalAnswer(outputBit, step, bitLength);
+    remainder = inputValue % columnHeading;
+    setRemainder(remainder, false);
+    setFinalAnswer(outputBit, currentStep, bitLength);
     if (verbose) {
-      setRemainder(inputValue % columnHeading, true);
-      verboseArea.innerHTML += `<li class="alignLeft">How many <strong>${columnHeading}</strong>s in <strong>${inputValue}</strong>? <strong>${outputBit}</strong> remainder <strong>${
-        inputValue % columnHeading
-      }</strong>.</li>`;
+      setRemainder(remainder, true);
+      verboseArea.innerHTML += `<li class="alignLeft">How many <strong>${columnHeading}</strong>s in <strong>${inputValue}</strong>? <strong>${outputBit}</strong> remainder <strong>${remainder}</strong>.</li>`;
     }
   } else if (inputBase === "16" && outputBase === "2") {
+    // Hex to binary - convert from hex to denary, calculate the output bit, set the current value to the value back in hex and output it
     let inputValueInDenary = parseInt(inputValue, inputBase);
     let outputBit = Math.floor(inputValueInDenary / columnHeading);
     outputBox.innerHTML = outputBit;
-    setCurrentValue((inputValueInDenary % columnHeading).toString(16), false);
-    setFinalAnswer(outputBit, step, bitLength);
+    remainder = inputValueInDenary % columnHeading;
+    setCurrentValue(remainder.toString(16), false);
+    setFinalAnswer(outputBit, currentStep, bitLength);
     if (verbose) {
       setCurrentValue((inputValueInDenary % columnHeading).toString(16), true);
-      verboseArea.innerHTML += `<li class="alignLeft">How many <strong>${columnHeading}</strong>s in <strong>${inputValue}</strong>? <strong>${outputBit}</strong> remainder <strong>${
-        inputValueInDenary % columnHeading
-      }</strong>.</li>`;
+      verboseArea.innerHTML += `<li class="alignLeft">How many <strong>${columnHeading}</strong>s in <strong>${inputValue}</strong>? <strong>${outputBit}</strong> remainder <strong>${remainder}</strong>.</li>`;
     }
   } else if (inputBase === "16" && outputBase === "10") {
     let inputValueInDenary = parseInt(inputValue, inputBase);
-    outputBox.innerHTML = inputValue;
+    outputBox.innerHTML = inputValue.toUpperCase();
     let originalValue = getCurrentValue();
     if (originalValue === "") {
       originalValue = 0;
     }
     let currentValue = originalValue + inputValueInDenary * columnHeading;
     setCurrentValue(currentValue, false);
-    setFinalAnswer(currentValue, step, bitLength, true);
+    setFinalAnswer(currentValue, currentStep, bitLength, true);
     if (verbose) {
       setCurrentValue(currentValue, true);
       verboseArea.innerHTML += `<li class="alignLeft"><strong>${originalValue}</strong> + (<strong>${inputValueInDenary}</strong> * <strong>${columnHeading}</strong>)? <strong>${currentValue}</strong>.</li>`;
@@ -359,11 +379,15 @@ function fillOutput(inputValue, bitLength, step, verbose) {
   }
 }
 
-function drawBinaryBoxes(area) {
+/**
+ * Called when draw is pressed
+ * @param areaId - element Id of the area to draw the boxes in
+ */
+function drawBinaryBoxes(areaId) {
   // Visualise the output
-  // Start by the layout
+  // Start by re-creating the area to blank it
   createResultsArea();
-  const outputArea = document.getElementById(area);
+  const outputArea = document.getElementById(areaId);
   outputArea.innerHTML = "";
   let boxesPerNibble = 3;
   let headingBase;
@@ -379,7 +403,7 @@ function drawBinaryBoxes(area) {
     nibbles = 1; // Inelegant way to force 1 hex nibble given 16 bit cap.
     boxesPerNibble = bitLength / 4 - 1; // -1 because zero indexed.
   }
-  // Draw heading boxes
+  // Draw heading boxes. Outer loop used to create padding every nibble
   for (let n = nibbles - 1; n >= 0; n--) {
     let padding = document.createElement("div");
     padding.setAttribute("class", "nibbleHeadingPadding");
@@ -395,15 +419,18 @@ function drawBinaryBoxes(area) {
         (inputBase === "2" && outputBase === "16") ||
         (inputBase === "16" && outputBase === "2")
       ) {
+        // Binary <-> Hex
         headingPower = trueIndex % 4;
         headingBase = 2;
       } else if (
         (inputBase === "10" && outputBase === "16") ||
         (inputBase === "16" && outputBase === "10")
       ) {
+        // Hex <-> Denary
         headingPower = trueIndex % 4;
         headingBase = 16;
       } else {
+        // Binary <-> Denary
         headingPower = trueIndex;
         headingBase = 2;
       }
@@ -428,7 +455,7 @@ function drawBinaryBoxes(area) {
       document.getElementById("nibbleOutputPadding" + n).appendChild(newChild);
     }
   }
-  document.getElementById("convertButton").style.visibility = "visible";
+  document.getElementById("calculateButton").style.visibility = "visible";
   document.getElementById("stepButton").style.visibility = "visible";
 
   outputArea.appendChild(document.createElement("br"));
@@ -605,4 +632,8 @@ function getBitLength() {
     document.getElementById("bitLength").options[bitIndex].value
   );
   return bitLength;
+}
+
+function hideElement(elementId) {
+  document.getElementById(elementId).style.visibility = "hidden";
 }
