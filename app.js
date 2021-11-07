@@ -78,7 +78,7 @@ function createSettings(bitLengthOptions) {
   drawButton.setAttribute("id", "drawButton");
   drawButton.setAttribute("value", "Draw");
   drawButton.addEventListener("click", function () {
-    draw("outputArea");
+    drawAddition("outputArea");
   });
   settingsArea.appendChild(drawButton);
 
@@ -278,20 +278,26 @@ function stepThrough() {
  * @param currentStep
  * @param verbose - boolean used when stepping through values so it prints out details
  */
-function fillOutput(inputValue, bitLength, currentStep, verbose = false) {
+function fillOutput(
+  inputValue,
+  bitLength,
+  currentStep,
+  outputId = "binaryOutputBox",
+  verbose = false
+) {
   // Iterate through the value and calculate it
   let remainder;
   let inputBase = getInputBase();
   let outputBase = getOutputBase();
   let boxIndex = bitLength - currentStep;
   let verboseArea = document.getElementById("verboseArea");
-  let outputBox = document.getElementById("binaryOutputBox" + boxIndex);
+  let outputBox = document.getElementById(outputId + boxIndex);
 
   // Highlight the active box & un-highlight the inactive one (doesn't happen on first step)
   outputBox.className = "outputBox active";
   if (currentStep !== 1) {
     let j = boxIndex + 1;
-    let oldOutputBox = document.getElementById("binaryOutputBox" + j);
+    let oldOutputBox = document.getElementById(outputId + j);
     oldOutputBox.className = "outputBox";
   }
   let columnHeading = parseInt(
@@ -457,7 +463,7 @@ function draw(areaId) {
   showElement("stepButton");
   outputArea.appendChild(document.createElement("br"));
 }
-/**
+
 function drawAddition(areaId) {
   // Visualise the output
   // Start by re-creating the area to blank it
@@ -472,13 +478,18 @@ function drawAddition(areaId) {
   let nibbles = bitLength / 4;
 
   if (
-      (inputBase === "10" && outputBase === "16") ||
-      (inputBase === "16" && outputBase === "10")
+    (inputBase === "10" && outputBase === "16") ||
+    (inputBase === "16" && outputBase === "10")
   ) {
     nibbles = 1; // Inelegant way to force 1 hex nibble given 16 bit cap.
     boxesPerNibble = bitLength / 4 - 1; // -1 because zero indexed.
   }
-  // Draw heading boxes. Outer loop used to create padding every nibble
+  // CHANGES: Added labels
+  let labelDiv = document.createElement("div");
+  labelDiv.setAttribute("class", "rowLabel");
+  outputArea.appendChild(labelDiv);
+
+  // Draw a single set of heading boxes. Outer loop used to create padding every nibble
   for (let n = nibbles - 1; n >= 0; n--) {
     let padding = document.createElement("div");
     padding.setAttribute("class", "nibbleHeadingPadding");
@@ -491,15 +502,15 @@ function drawAddition(areaId) {
       newChild.setAttribute("class", "headingBox");
       newChild.setAttribute("id", "headingBox" + trueIndex);
       if (
-          (inputBase === "2" && outputBase === "16") ||
-          (inputBase === "16" && outputBase === "2")
+        (inputBase === "2" && outputBase === "16") ||
+        (inputBase === "16" && outputBase === "2")
       ) {
         // Binary <-> Hex
         headingPower = trueIndex % 4;
         headingBase = 2;
       } else if (
-          (inputBase === "10" && outputBase === "16") ||
-          (inputBase === "16" && outputBase === "10")
+        (inputBase === "10" && outputBase === "16") ||
+        (inputBase === "16" && outputBase === "10")
       ) {
         // Hex <-> Denary
         headingPower = trueIndex % 4;
@@ -515,26 +526,39 @@ function drawAddition(areaId) {
   }
   outputArea.appendChild(document.createElement("br"));
 
-  // Draw output boxes
-  // Add padding every 4 boxes for a nibble?
-  for (let n = nibbles - 1; n >= 0; n--) {
-    padding = document.createElement("div");
-    padding.setAttribute("class", "nibbleOutputPadding");
-    padding.setAttribute("id", "nibbleOutputPadding" + n);
-    outputArea.appendChild(padding);
-    for (let i = boxesPerNibble; i >= 0; i--) {
-      let trueIndex = n * 4 + i;
-      let newChild = document.createElement("div");
-      newChild.setAttribute("class", "outputBox");
-      newChild.setAttribute("id", "binaryOutputBox" + trueIndex);
-      document.getElementById("nibbleOutputPadding" + n).appendChild(newChild);
+  let rowNames = ["Num1", "Num2", "Answer", "Carry"];
+
+  for (let row = 0; row < rowNames.length; row++) {
+    // CHANGES: Added labels
+    let labelDiv = document.createElement("div");
+    labelDiv.setAttribute("class", "rowLabel");
+    labelDiv.innerHTML = rowNames[row];
+    outputArea.appendChild(labelDiv);
+    for (let n = nibbles - 1; n >= 0; n--) {
+      let padding = document.createElement("div");
+      padding.setAttribute("class", "nibbleOutputPadding");
+      padding.setAttribute("id", "nibbleOutputPadding" + rowNames[row] + n);
+      outputArea.appendChild(padding);
+      for (let i = boxesPerNibble; i >= 0; i--) {
+        let trueIndex = n * 4 + i;
+        let newChild = document.createElement("div");
+        newChild.setAttribute("class", "outputBox");
+        newChild.setAttribute(
+          "id",
+          "binaryOutputBox" + rowNames[row] + trueIndex
+        );
+        document
+          .getElementById("nibbleOutputPadding" + rowNames[row] + n)
+          .appendChild(newChild);
+      }
     }
+    outputArea.appendChild(document.createElement("br"));
+
+    showElement("calculateButton");
+    showElement("stepButton");
+    outputArea.appendChild(document.createElement("br"));
   }
-  showElement("calculateButton");
-  showElement("stepButton");
-  outputArea.appendChild(document.createElement("br"));
 }
-**/
 
 /**
  * Used to create each of the base conversion pages
@@ -581,6 +605,7 @@ function hexToDenary() {
 
 function binaryAddition() {
   setup(2, 2, 2);
+  let rowNames = ["Num1", "Num2", "Answer", "Carry"];
 }
 
 /**
@@ -643,11 +668,11 @@ function getInputValue() {
  * Reads the value from the input box and sets it in the results section
  * Pads binary/hex values to appropriate length
  */
-function setInputValue() {
+function setInputValue(boxNumber = 0) {
   // TODO: Adjust so subscript base is not bolded
   let inputBase = getInputBase();
   let bitLength = getBitLength();
-  let inputValue = document.getElementById("inputBox0").value;
+  let inputValue = document.getElementById("inputBox" + boxNumber).value;
   inputValue = inputValue.split(" ").join("");
   if (inputBase === "2") {
     // Pads it to the appropriate length and splits it into nibbles.

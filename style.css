@@ -1,94 +1,96 @@
 @charset "utf-8";
 /* CSS Document */
 
-
-
-body
-{
-    font-family: "Question", "Century Gothic", CenturyGothic, Geneva, AppleGothic, sans-serif;
+body {
+  font-family: "Question", "Century Gothic", CenturyGothic, Geneva, AppleGothic,
+    sans-serif;
 }
 
 @font-face {
-    font-family: "Question";
-    src: local('Verdana');
-    unicode-range: U+003F;
+  font-family: "Question";
+  src: local("Verdana");
+  unicode-range: U+003F;
 }
 
-#verboseArea{
-    text-align: left;
-    border-radius:5px;
-    border: 2px solid black;
-    width: 800px;
-    display: inline-block;
+#verboseArea {
+  text-align: left;
+  border-radius: 5px;
+  border: 2px solid black;
+  width: 800px;
+  display: inline-block;
 }
 
 #pageTitle {
-    text-align: center;
+  text-align: center;
 }
 
-#mainBody{
-    text-align: center;
+#mainBody {
+  text-align: center;
 }
 
 .alignLeft {
-    text-align:left;
+  text-align: left;
 }
 
-.alignRight{
-    text-align: right;
+.alignRight {
+  text-align: right;
 }
 
 .active {
-    background-color: lightskyblue;
+  background-color: lightskyblue;
 }
 
 .clearfix::after {
-    content: "";
-    clear: both;
-    display: table;
+  content: "";
+  clear: both;
+  display: table;
 }
 
-input[type="button"]{
-    display: inline-block;
-    margin: 5px;
+input[type="button"] {
+  display: inline-block;
+  margin: 5px;
+}
+
+.rowLabel {
+  display: inline-block;
+  width: 100px;
+  text-align: center;
 }
 
 .outputBox {
-    height: 55px;
-    width: 55px;
-    border: 2px solid black;
-    border-radius: 5px;
-    text-align: center;
-    font-size: large;
-    margin: 2px;
-    display: inline-block;
-    color: black;
-    vertical-align: middle;
-    line-height: 50px;
-
+  height: 55px;
+  width: 55px;
+  border: 2px solid black;
+  border-radius: 5px;
+  text-align: center;
+  font-size: large;
+  margin: 2px;
+  display: inline-block;
+  color: black;
+  vertical-align: middle;
+  line-height: 50px;
 }
 
-.nibbleHeadingPadding{
-    display: inline-block;
-    border: 2px solid transparent;
-    margin-left: 10px;
+.nibbleHeadingPadding {
+  display: inline-block;
+  border: 2px solid transparent;
+  margin-left: 10px;
 }
 
-.nibbleOutputPadding{
-    display: inline-block;
-    border: 2px solid darkorange;
-    margin-left: 10px;
+.nibbleOutputPadding {
+  display: inline-block;
+  border: 2px solid darkorange;
+  margin-left: 10px;
 }
 
 .headingBox {
-    height: 55px;
-    width: 55px;
-    text-align: center;
-    font-size: large;
-    color: red;
-    margin-left: 2px;
-    margin-right: 2px;
-    display: inline-block;
-    line-height: 50px;
-
+  height: 55px;
+  width: 55px;
+  text-align: center;
+  font-size: large;
+  color: red;
+  margin-left: 2px;
+  margin-right: 2px;
+  display: inline-block;
+  line-height: 50px;
 }
